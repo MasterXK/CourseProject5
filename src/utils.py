@@ -1,21 +1,10 @@
 import psycopg2
-import dotenv
-import os
-from config import config
-from HHParser import HHParser
-
-dotenv.load_dotenv()
-PSQL_PASS = os.getenv('PSQL_PASS')
+from src.config import config
+from src.HHParser import HHParser
+from typing import Any
 
 
 def create_database(db_name):
-    conn_params = dict(
-        host="localhost",
-        database="postgres",
-        user="postgres",
-        password=PSQL_PASS
-    )
-
     conn = psycopg2.connect(dbname='postgres', **config())
     conn.autocommit = True
     cur = conn.cursor()
@@ -46,30 +35,7 @@ def create_tables(db_name):
     conn.close()
 
 
-def inset_data(db_name):
-    conn = psycopg2.connect(dbname=db_name, **config())
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute('CREATE TABLE employers'
-                        '(id int PRIMARY KEY,'
-                        'name varchar(255) UNIQUE NOT NULL)')
-
-            cur.execute('CREATE TABLE vacancies'
-                        '(id int PRIMARY KEY,'
-                        'name varchar(255) NOT NULL,'
-                        'area varchar(255),'
-                        'salary_from int,'
-                        'salary_to int,'
-                        'url varchar(255),'
-                        'published_at timestamp,'
-                        'employer int REFERENCES employers(id) NOT NULL)')
-    conn.close()
-
-
-def insert_data(db_name):
-    hh = HHParser()
-    employers = hh.get_employers()
-    vacancies = hh.get_all_vacancies()
+def insert_data(db_name, employers: list[dict[str, Any]], vacancies: list[dict[str, Any]]):
     conn = psycopg2.connect(dbname=db_name, **config())
     with conn:
         with conn.cursor() as cur:
@@ -90,6 +56,9 @@ def insert_data(db_name):
 
 
 if __name__ == '__main__':
+    hh = HHParser()
+    employers = hh.get_employers()
+    vacancies = hh.get_all_vacancies()
     create_database('course_work_5')
     create_tables('course_work_5')
-    insert_data('course_work_5')
+    insert_data('course_work_5', employers, vacancies)

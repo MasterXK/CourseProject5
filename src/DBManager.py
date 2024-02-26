@@ -1,7 +1,5 @@
-from pprint import pprint
-
 import psycopg2
-from config import config
+from src.config import config
 
 
 class DBManager:
@@ -30,7 +28,7 @@ class DBManager:
         companies_count = self.execute_query('SELECT COUNT(*) FROM employers')[0][0]
         vacancies_count = self.execute_query('SELECT COUNT(*) FROM vacancies')[0][0]
 
-        return f'Кол-во компаний: {companies_count}\nКол-во вакансий: {vacancies_count}'
+        return companies_count, vacancies_count
 
     def get_all_vacancies(self):
         """
@@ -47,9 +45,9 @@ class DBManager:
         Функция получает среднюю зарплату по вакансиям
         :return:
         """
-        avg_salary = self.execute_query('SELECT AVG(round((salary_from + salary_to) / 2)) FROM vacancies')
+        avg_salary = self.execute_query('SELECT AVG(round((salary_from + salary_to) / 2)) FROM vacancies')[0][0]
 
-        return avg_salary[0][0]
+        return avg_salary
 
     def get_vacancies_with_higher_salary(self):
         """
@@ -79,10 +77,3 @@ class DBManager:
                                                     f'WHERE name LIKE \'%{keyword}%\''))
 
         return vacancies
-
-
-if __name__ == '__main__':
-    db_mng = DBManager('course_work_5')
-    print(db_mng.get_vacancies_with_keyword('Специалист'))
-    # for vacancy in db_mng.get_all_vacancies():
-    #     print(vacancy)
