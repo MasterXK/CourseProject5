@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import psycopg2
 from config import config
 
@@ -15,6 +17,7 @@ class DBManager:
             with conn.cursor() as cur:
                 cur.execute(query)
                 result = cur.fetchall()
+
         conn.close()
 
         return result
@@ -34,30 +37,52 @@ class DBManager:
         Функция получает список всех вакансий с указанием названия компании, названия вакансии и зарплаты и ссылки на вакансию
         :return:
         """
-        pass
+        vacancies = [('id', 'name', 'area', 'salary_from', 'salary_to', 'url', 'published_at', 'employer')]
+        vacancies.extend(self.execute_query('SELECT * FROM vacancies'))
+
+        return vacancies
 
     def get_avg_salary(self):
         """
         Функция получает среднюю зарплату по вакансиям
         :return:
         """
-        pass
+        avg_salary = self.execute_query('SELECT AVG(round((salary_from + salary_to) / 2)) FROM vacancies')
+
+        return avg_salary[0][0]
 
     def get_vacancies_with_higher_salary(self):
         """
         Функция получает список всех вакансий, у которых зарплата выше средней по всем вакансиям
         :return:
         """
-        pass
+        avg_salary = self.get_avg_salary()
 
-    def get_vacancies_with_keyword(self):
+        vacancies = self.execute_query(f'SELECT * FROM vacancies '
+                                       f'WHERE round((salary_from + salary_to) / 2) > {avg_salary}')
+
+        return vacancies
+
+    def get_vacancies_with_keyword(self, keywords: list | str):
         """
         Функция получает список всех вакансий, в названии которых содержатся переданные в метод слова
         :return:
         """
-        pass
+        vacancies = []
+        if type(keywords) is list:
+            for keyword in keywords:
+                vacancies.extend(self.execute_query(f'SELECT * FROM vacancies '
+                                                    f'WHERE name LIKE \'%{keyword}%\''))
+        else:
+            for keyword in keywords.split():
+                vacancies.extend(self.execute_query(f'SELECT * FROM vacancies '
+                                                    f'WHERE name LIKE \'%{keyword}%\''))
+
+        return vacancies
 
 
 if __name__ == '__main__':
     db_mng = DBManager('course_work_5')
-    print(db_mng.get_companies_and_vacancies_count())
+    print(db_mng.get_vacancies_with_keyword('Специалист'))
+    # for vacancy in db_mng.get_all_vacancies():
+    #     print(vacancy)
